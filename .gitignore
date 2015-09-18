@@ -1,6 +1,9 @@
 *~
 *.bak
 
+# gradle
+.gradle
+
 # KDE directory preferences
 .directory
 

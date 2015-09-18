@@ -1,0 +1,4 @@
+// -*-mode: Groovy -*-
+
+rootProject.name = 'dita-ng-library'
+

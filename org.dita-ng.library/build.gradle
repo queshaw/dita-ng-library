@@ -1,0 +1,65 @@
+// -*-mode: Groovy -*-
+
+apply plugin: 'java'
+
+version = 0.1
+
+defaultTasks 'clean', 'dist'
+
+configurations {
+  jarsCompile
+  jarsTest
+}
+
+task dependencies(dependsOn: 'dependencies.test') {
+  description = 'Attempts to download dependencies newer than those in lib.'
+}
+
+task 'dependencies.compile'(type: Copy) {
+  description = 'Attempts to download the distribution dependencies.'
+  from configurations.jarsCompile
+  into 'local-lib/compile'
+}
+
+task 'dependencies.test'(type: Copy, dependsOn: 'dependencies.compile') {
+  description = 'Attempts to download the test dependencies.'
+  from configurations.jarsTest
+  into 'local-lib/test'
+}
+
+task dist(type:Copy, dependsOn: jar) {
+  description = 'Assembles a distributable in the dist directory.'
+  from jar.outputs.files()
+  from configurations.compile
+  include('**/dita-ng*')
+  include('**/jing*')
+  include('**/*LICENSE*')
+  into('dist')
+}
+
+jar {
+  from { configurations.compile.findAll { it.isDirectory() } }
+  manifest {
+    attributes 'Implementation-Title': 'DITA-NG',
+               'Implementation-Version': version,
+               'Built-Date': new Date(), 
+               'Built-JDK': System.getProperty("java.version")
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile fileTree('local-lib/compile')
+  compile fileTree('lib/compile')
+  testCompile fileTree('local-lib/test')
+  testCompile fileTree('lib/test')
+
+  jarsCompile group: 'com.thaiopensource', name: 'jing', version: '[20091111,)'
+  jarsCompile group: 'xerces', name: 'xercesImpl', version: '[2.11.0,)'
+  jarsTest group: 'junit', name: 'junit', version: '[4.12,)'
+  jarsTest group: 'net.sourceforge.saxon', name: 'saxon', version:'9.1.0.8', classifier:'dom'
+  jarsTest group: 'net.sourceforge.saxon', name: 'saxon', version:'9.1.0.8'
+}
