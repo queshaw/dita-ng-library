@@ -91,6 +91,7 @@ public class RelaxNGDefaultsComponent implements XMLDocumentHandler,
   private XMLDocumentSource documentSource;
   private XMLLocator locator;
 
+  private boolean ditaOtTemp = false;
   private boolean detecting = false;
   private String schema = null;
   private String type = null;
@@ -169,6 +170,7 @@ public class RelaxNGDefaultsComponent implements XMLDocumentHandler,
   public void reset(XMLComponentManager componentManager)
       throws XMLConfigurationException {
     baseSystemId = null;
+    ditaOtTemp =false;
     detecting = false;
     schema = null;
     type = null;
@@ -443,46 +445,50 @@ public class RelaxNGDefaultsComponent implements XMLDocumentHandler,
    */
   public void processingInstruction(String name, XMLString content,
       Augmentations arg2) throws XNIException {
-    if (detecting && schema == null && "oxygen".equals(name)) {
-      String data = content.toString();
-      schema = getFromPIDataPseudoAttribute(data, "RNGSchema", true);
-      type = getFromPIDataPseudoAttribute(data, "type", true);
-    }
-
-    if (detecting && schema == null && "xml-model".equals(name)) {
-      String data = content.toString();
-      schema = getFromPIDataPseudoAttribute(data, "href", true);
-      type = getFromPIDataPseudoAttribute(data, "type", true);
-      String schemaTypeNs = getFromPIDataPseudoAttribute(data, "schematypens",
-          true);
-      if (schema != null) {
-        if (schema.toLowerCase().endsWith(".rng")) {
-          if (nullOrValue(schemaTypeNs, "http://relaxng.org/ns/structure/1.0")
-              && nullOrValue(type, "application/xml")) {
-            type = "xml";
-          } else {
-            schema = null;
-          }
-        } else if (schema.toLowerCase().endsWith(".rnc")) {
-          if (nullOrValue(schemaTypeNs, "http://relaxng.org/ns/structure/1.0")
-              && nullOrValue(type, "application/relax-ng-compact-syntax")) {
-            type = "compact";
-          } else {
-            schema = null;
-          }
-        } else {
-          if ("http://relaxng.org/ns/structure/1.0".equals(schemaTypeNs)
-              && nullOrValue(type, "application/xml")) {
-            type = "xml";
-          } else if ("application/relax-ng-compact-syntax".equals(type)
-              && nullOrValue(schemaTypeNs,
-                  "http://relaxng.org/ns/structure/1.0")) {
-            type = "compact";
-          } else {
-            schema = null;
-          }
+    if (!ditaOtTemp && detecting && schema == null) {
+        String data = content.toString();
+        switch (name) {
+        case "workdir":
+            ditaOtTemp = true;
+            break;
+        case "oxygen":
+            schema = getFromPIDataPseudoAttribute(data, "RNGSchema", true);
+            type = getFromPIDataPseudoAttribute(data, "type", true);
+            break;
+        case "xml-model":
+            schema = getFromPIDataPseudoAttribute(data, "href", true);
+            type = getFromPIDataPseudoAttribute(data, "type", true);
+            String schemaTypeNs = getFromPIDataPseudoAttribute(data, "schematypens", true);
+            if (schema != null) {
+                if (schema.toLowerCase().endsWith(".rng")) {
+                    if (nullOrValue(schemaTypeNs, "http://relaxng.org/ns/structure/1.0")
+                        && nullOrValue(type, "application/xml")) {
+                        type = "xml";
+                    } else {
+                        schema = null;
+                    }
+                } else if (schema.toLowerCase().endsWith(".rnc")) {
+                    if (nullOrValue(schemaTypeNs, "http://relaxng.org/ns/structure/1.0")
+                        && nullOrValue(type, "application/relax-ng-compact-syntax")) {
+                        type = "compact";
+                    } else {
+                        schema = null;
+                    }
+                } else {
+                    if ("http://relaxng.org/ns/structure/1.0".equals(schemaTypeNs)
+                        && nullOrValue(type, "application/xml")) {
+                        type = "xml";
+                    } else if ("application/relax-ng-compact-syntax".equals(type)
+                               && nullOrValue(schemaTypeNs,
+                                              "http://relaxng.org/ns/structure/1.0")) {
+                        type = "compact";
+                    } else {
+                        schema = null;
+                    }
+                }
+            }
+            break;
         }
-      }
     }
 
     if (documentHandler != null) {
