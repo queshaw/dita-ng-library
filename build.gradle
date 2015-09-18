@@ -45,7 +45,7 @@ task 'assemble-dist'(type: Copy, dependsOn: jar) {
   with project.copySpec {
          from jar.outputs.files()
          from configurations.compile
-         include '**/dita-ng*'
+         include "**/${plugin}*"
          include '**/jing*' 
          include '**/*LICENSE*' 
          into 'lib'
