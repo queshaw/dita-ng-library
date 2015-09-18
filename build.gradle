@@ -4,6 +4,11 @@ apply plugin: 'java'
 
 version = 0.1
 
+description = 'DITA-NG'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
 ext {
   plugin = 'org.dita-ng.library'
 }
@@ -15,6 +20,45 @@ configurations {
   jarsCompile
   jarsTest
 }
+
+task dist(type: Zip, dependsOn: 'assemble-dist') {
+  description = 'Creates a zip archive of the distributable.'
+  destinationDir = file('dist')
+  from "${project.buildDir}/dist/${plugin}"
+}
+
+task 'assemble-dist'(type: Copy, dependsOn: jar) {
+  description = 'Assembles a distributable in the dist directory.'
+  from 'plugin.xml', 'LICENSE.txt', 'README.md'
+  into "${project.buildDir}/dist/${plugin}"
+  with project.copySpec {
+         from jar.outputs.files()
+         from configurations.compile
+         include "**/${plugin}*"
+         include '**/jing*' 
+         include '**/jing.LICENSE*' 
+         into 'lib'
+         eachFile { f ->
+           if (f.sourceName =~ /^${plugin}/) {
+             name = 'dita-ng.jar'
+           } else if (f.sourceName =~ /^jing.*jar$/) {
+             name = 'jing.jar'
+           }
+         }
+  }
+}
+
+jar {
+  from { configurations.compile.findAll { it.isDirectory() } }
+  manifest {
+    attributes 'Implementation-Title': description,
+               'Implementation-Version': version,
+               'Built-Date': new Date(), 
+               'Built-JDK': System.getProperty("java.version")
+  }
+}
+
+// This is not invoked automatically
 
 task dependencies(dependsOn: 'dependencies.test') {
   description = 'Attempts to download dependencies newer than those in lib.'
@@ -30,38 +74,6 @@ task 'dependencies.test'(type: Copy, dependsOn: 'dependencies.compile') {
   description = 'Attempts to download the test dependencies.'
   from configurations.jarsTest
   into 'local-lib/test'
-}
-
-task dist(type: Zip, dependsOn: 'assemble-dist') {
-  description = 'Creates a zip archive of the distributable.'
-  destinationDir = file('dist')
-  from "${project.buildDir}/dist/${plugin}"
-}
-
-task 'assemble-dist'(type: Copy, dependsOn: jar) {
-  description = 'Assembles a distributable in the dist directory.'
-  from 'plugin.xml', 'LICENSE.txt', 'README.md'
-  into "${project.buildDir}/dist/org.dita-ng.library"
-  with project.copySpec {
-         from jar.outputs.files()
-         from configurations.compile
-         include "**/${plugin}*"
-         include '**/jing*' 
-         include '**/*LICENSE*' 
-         into 'lib'
-  }
-  doLast {
-  }
-}
-
-jar {
-  from { configurations.compile.findAll { it.isDirectory() } }
-  manifest {
-    attributes 'Implementation-Title': 'DITA-NG',
-               'Implementation-Version': version,
-               'Built-Date': new Date(), 
-               'Built-JDK': System.getProperty("java.version")
-  }
 }
 
 repositories {
